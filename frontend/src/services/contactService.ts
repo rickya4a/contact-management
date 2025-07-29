@@ -2,8 +2,13 @@ import api from './api';
 import type { Contact } from '@/types/contact';
 
 export const contactService = {
-    async getContacts(page = 1) {
-        const response = await api.get(`/contacts?page=${page}`);
+    async getContacts(page = 1, search = '') {
+        const response = await api.get('/contacts', {
+            params: {
+                page,
+                search: search.trim()
+            }
+        });
         return response.data;
     },
 

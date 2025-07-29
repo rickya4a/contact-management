@@ -46,6 +46,11 @@ class ContactCrudController extends CrudController
     protected function setupListOperation()
     {
         CRUD::setFromDb(); // set columns from db columns.
+        CRUD::column('name');
+        CRUD::column('email');
+        CRUD::column('phone');
+        CRUD::column('created_at');
+        CRUD::column('updated_at');
 
         /**
          * Columns can be defined using the fluent syntax:

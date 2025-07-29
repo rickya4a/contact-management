@@ -6,6 +6,7 @@ interface State {
     contacts: Contact[];
     loading: boolean;
     error: string | null;
+    searchQuery: string;
     pagination: {
         currentPage: number;
         lastPage: number;
@@ -18,6 +19,7 @@ export const useContactStore = defineStore('contact', {
         contacts: [],
         loading: false,
         error: null,
+        searchQuery: '',
         pagination: {
             currentPage: 1,
             lastPage: 1,
@@ -25,12 +27,56 @@ export const useContactStore = defineStore('contact', {
         }
     }),
 
+    getters: {
+        sortedContacts: (state) => {
+            if (!state.searchQuery) return state.contacts;
+
+            const searchLower = state.searchQuery.toLowerCase();
+
+            return [...state.contacts].sort((a, b) => {
+                const aName = a.name.toLowerCase();
+                const bName = b.name.toLowerCase();
+                const aEmail = a.email.toLowerCase();
+                const bEmail = b.email.toLowerCase();
+                const aPhone = a.phone;
+                const bPhone = b.phone;
+
+                // Exact matches first
+                const aExactMatch = aName === searchLower || aEmail === searchLower || aPhone === searchLower;
+                const bExactMatch = bName === searchLower || bEmail === searchLower || bPhone === searchLower;
+
+                if (aExactMatch && !bExactMatch) return -1;
+                if (!aExactMatch && bExactMatch) return 1;
+
+                // Starts with search query second
+                const aStartsWith = aName.startsWith(searchLower) || aEmail.startsWith(searchLower) || aPhone.startsWith(searchLower);
+                const bStartsWith = bName.startsWith(searchLower) || bEmail.startsWith(searchLower) || bPhone.startsWith(searchLower);
+
+                if (aStartsWith && !bStartsWith) return -1;
+                if (!aStartsWith && bStartsWith) return 1;
+
+                // Contains search query last
+                const aContains = aName.includes(searchLower) || aEmail.includes(searchLower) || aPhone.includes(searchLower);
+                const bContains = bName.includes(searchLower) || bEmail.includes(searchLower) || bPhone.includes(searchLower);
+
+                if (aContains && !bContains) return -1;
+                if (!aContains && bContains) return 1;
+
+                return 0;
+            });
+        }
+    },
+
     actions: {
-        async fetchContacts(page = 1) {
+        setSearchQuery(query: string) {
+            this.searchQuery = query;
+        },
+
+        async fetchContacts(page = 1, search = '') {
             this.loading = true;
             this.error = null;
             try {
-                const response: ContactsResponse = await contactService.getContacts(page);
+                const response: ContactsResponse = await contactService.getContacts(page, search);
                 this.contacts = response.data;
                 this.pagination = {
                     currentPage: response.meta.current_page,

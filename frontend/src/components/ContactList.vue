@@ -71,7 +71,10 @@
           <ul role="list" class="divide-y divide-gray-200">
             <li v-for="contact in displayedContacts" :key="contact.id"
                 class="px-4 py-4 sm:px-6 hover:bg-gray-50 transition-colors duration-150 cursor-pointer"
-                :class="{ 'bg-indigo-50': selectedContact?.id === contact.id }"
+                :class="{
+                  'bg-indigo-50': selectedContact?.id === contact.id,
+                  'opacity-50': isDeleting && selectedContact?.id === contact.id
+                }"
                 @click="handleViewDetails(contact)">
               <div class="flex items-center justify-between">
                 <div class="flex-1 min-w-0 pr-4">
@@ -102,6 +105,8 @@
         <div v-if="selectedContact" class="sticky top-4">
           <ContactDetails
             :contact="selectedContact"
+            :is-deleting="isDeleting"
+            :is-updating="isUpdating"
             @edit="handleEdit(selectedContact)"
             @delete="handleDelete(selectedContact.id!)"
             @close="selectedContact = null"
@@ -155,7 +160,7 @@
               </div>
               <ContactForm
                 :contact="editingContact || undefined"
-                :loading="contactStore.loading"
+                :loading="isCreating || isUpdating"
                 @submit="handleSubmit"
                 @cancel="closeModal"
               />
@@ -180,6 +185,11 @@ const editingContact = ref<Contact | null>(null);
 const selectedContact = ref<Contact | null>(null);
 const searchQuery = ref('');
 let debounceTimer: number | null = null;
+
+// Add loading states
+const isCreating = ref(false);
+const isUpdating = ref(false);
+const isDeleting = ref(false);
 
 // Load initial data
 contactStore.fetchContacts();
@@ -221,12 +231,15 @@ const handleEdit = (contact: Contact) => {
 const handleDelete = async (id: number) => {
   if (confirm('Are you sure you want to delete this contact?')) {
     try {
+      isDeleting.value = true;
       await contactStore.deleteContact(id);
       if (selectedContact.value?.id === id) {
         selectedContact.value = null;
       }
     } catch (error) {
       // Error is already handled in the store
+    } finally {
+      isDeleting.value = false;
     }
   }
 };
@@ -234,16 +247,21 @@ const handleDelete = async (id: number) => {
 const handleSubmit = async (contact: Contact) => {
   try {
     if (editingContact.value) {
+      isUpdating.value = true;
       await contactStore.updateContact(editingContact.value.id!, contact);
       if (selectedContact.value?.id === editingContact.value.id) {
         selectedContact.value = { ...contact, id: editingContact.value.id };
       }
     } else {
+      isCreating.value = true;
       await contactStore.createContact(contact);
     }
     closeModal();
   } catch (error) {
     // Error is already handled in the store
+  } finally {
+    isCreating.value = false;
+    isUpdating.value = false;
   }
 };
 

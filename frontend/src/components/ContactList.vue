@@ -87,7 +87,7 @@
           {{ editingContact ? 'Edit Contact' : 'Create Contact' }}
         </h3>
         <ContactForm
-          :contact="editingContact"
+          :contact="editingContact || undefined"
           :loading="contactStore.loading"
           @submit="handleSubmit"
           @cancel="closeModal"

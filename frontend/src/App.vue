@@ -5,7 +5,9 @@ import { RouterView, useRouter } from 'vue-router';
 const router = useRouter();
 
 const isAuthenticated = computed(() => {
-  return !!localStorage.getItem('token');
+  const token = localStorage.getItem('token');
+  const currentRoute = router.currentRoute.value;
+  return !!token && currentRoute.path !== '/login';
 });
 
 const handleLogout = () => {
@@ -17,7 +19,7 @@ const handleLogout = () => {
 <template>
   <div class="min-h-screen bg-gray-100">
     <nav v-if="isAuthenticated" class="bg-white shadow">
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="w-full mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex justify-between h-16">
           <div class="flex">
             <div class="flex-shrink-0 flex items-center">
@@ -53,31 +55,6 @@ header {
   margin: 0 auto 2rem;
 }
 
-nav {
-  width: 100%;
-  font-size: 12px;
-  text-align: center;
-  margin-top: 2rem;
-}
-
-nav a.router-link-exact-active {
-  color: var(--color-text);
-}
-
-nav a.router-link-exact-active:hover {
-  background-color: transparent;
-}
-
-nav a {
-  display: inline-block;
-  padding: 0 1rem;
-  border-left: 1px solid var(--color-border);
-}
-
-nav a:first-of-type {
-  border: 0;
-}
-
 @media (min-width: 1024px) {
   header {
     display: flex;
@@ -93,15 +70,6 @@ nav a:first-of-type {
     display: flex;
     place-items: flex-start;
     flex-wrap: wrap;
-  }
-
-  nav {
-    text-align: left;
-    margin-left: -1rem;
-    font-size: 1rem;
-
-    padding: 1rem 0;
-    margin-top: 1rem;
   }
 }
 </style>

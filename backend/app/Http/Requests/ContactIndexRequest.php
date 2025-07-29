@@ -4,7 +4,7 @@ namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 
-class ContactRequest extends FormRequest
+class ContactIndexRequest extends FormRequest
 {
     public function authorize()
     {
@@ -14,9 +14,9 @@ class ContactRequest extends FormRequest
     public function rules()
     {
         return [
-            'name' => 'required|string|min:2|max:100',
-            'email' => 'required|email',
-            'phone' => 'required|string|min:8|max:20'
+            'search' => 'nullable|string|max:100',
+            'page' => 'nullable|integer|min:1',
+            'per_page' => 'nullable|integer|min:1|max:100'
         ];
     }
 }

@@ -3,62 +3,58 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
+use App\Http\Requests\ContactRequest;
+use App\Http\Requests\ContactIndexRequest;
 use App\Models\Contact;
 use App\Http\Resources\ContactResource;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class ContactController extends Controller
 {
-    public function index(Request $request)
+    public function index(ContactIndexRequest $request)
     {
-        $search = $request->get('search');
-
-        $query = Contact::search($search);
-
-        if (!empty($search)) {
-            $searchLower = strtolower($search);
-            $query->orderByRaw("
-                CASE
-                    WHEN LOWER(name) = ? THEN 1
-                    WHEN LOWER(email) = ? THEN 1
-                    WHEN phone = ? THEN 1
-                    WHEN LOWER(name) LIKE ? THEN 2
-                    WHEN LOWER(email) LIKE ? THEN 2
-                    WHEN phone LIKE ? THEN 2
-                    ELSE 3
-                END
-            ", [
-                $searchLower,         // Exact name match
-                $searchLower,         // Exact email match
-                $search,              // Exact phone match
-                $searchLower . '%',   // Starts with name
-                $searchLower . '%',   // Starts with email
-                $search . '%',        // Starts with phone
-            ]);
+        try {
+            $contacts = Contact::search($request->get('search'))
+                ->paginate($request->get('per_page', 10));
+            return ContactResource::collection($contacts);
+        } catch (\Exception $e) {
+            Log::error('Error fetching contacts: ' . $e->getMessage());
+            return response()->json(['message' => 'Error fetching contacts'], 500);
         }
-
-        $contacts = $query->paginate(10);
-        return ContactResource::collection($contacts);
     }
 
-    public function store(Request $request)
+    public function store(ContactRequest $request)
     {
-        $contact = Contact::create($request->all());
-        return new ContactResource($contact);
+        try {
+            $contact = Contact::create($request->validated());
+            return new ContactResource($contact);
+        } catch (\Exception $e) {
+            Log::error('Error creating contact: ' . $e->getMessage());
+            return response()->json(['message' => 'Error creating contact'], 500);
+        }
     }
 
-    public function update(Request $request, $id)
+    public function update(ContactRequest $request, $id)
     {
-        $contact = Contact::findOrFail($id);
-        $contact->update($request->all());
-        return new ContactResource($contact);
+        try {
+            $contact = Contact::findOrFail($id);
+            $contact->update($request->validated());
+            return new ContactResource($contact);
+        } catch (\Exception $e) {
+            Log::error('Error updating contact: ' . $e->getMessage());
+            return response()->json(['message' => 'Error updating contact'], 500);
+        }
     }
 
     public function destroy($id)
     {
-        $contact = Contact::findOrFail($id);
-        $contact->delete();
-        return response()->noContent();
+        try {
+            $contact = Contact::findOrFail($id);
+            $contact->delete();
+            return response()->noContent();
+        } catch (\Exception $e) {
+            Log::error('Error deleting contact: ' . $e->getMessage());
+            return response()->json(['message' => 'Error deleting contact'], 500);
+        }
     }
 }
